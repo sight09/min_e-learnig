@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MiniLearn — Mini E‑Learning Prototype</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* -----------------------------
+       Base / Reset
+       ----------------------------- */
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent:#4f46e5; /* indigo */
+      --accent-600:#4338ca;
+      --success:#10b981;
+      --glass: rgba(255,255,255,0.7);
+      font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg) 0%, #eef2ff 100%);
+      color:#111827;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding-bottom:60px; /* room for footer */
+    }
+
+    /* -----------------------------
+       Layout
+       ----------------------------- */
+    .container{max-width:1100px;margin:28px auto;padding:0 20px}
+
+    /* Nav */
+    header.nav{
+      display:flex;align-items:center;justify-content:space-between;padding:16px 0;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-600));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;box-shadow:0 6px 20px rgba(79,70,229,0.15)}
+    nav a{margin-left:18px;text-decoration:none;color:var(--muted);font-weight:500}
+    nav a:hover{color:var(--accent)}
+
+    /* Search and header actions */
+    .tools{display:flex;gap:12px;align-items:center}
+    .search{
+      display:flex;align-items:center;background:var(--card);padding:8px 12px;border-radius:999px;box-shadow:0 4px 14px rgba(16,24,40,0.04);
+    }
+    .search input{border:0;outline:0;background:transparent;width:220px}
+
+    /* Grid of courses */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}
+    @media (max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:600px){.grid{grid-template-columns:1fr}}
+
+    .card{
+      background:var(--card);padding:16px;border-radius:14px;box-shadow:0 6px 18px rgba(15,23,42,0.06);display:flex;flex-direction:column;gap:12px;transition:transform .18s cubic-bezier(.2,.9,.3,1),box-shadow .18s;
+    }
+    .card:hover{transform:translateY(-6px);box-shadow:0 18px 36px rgba(15,23,42,0.08)}
+    .thumb{width:100%;height:120px;border-radius:10px;background:linear-gradient(135deg,#eef2ff,#fdf2f8);display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);font-size:18px}
+    .meta{display:flex;justify-content:space-between;align-items:center}
+    .title{font-weight:600}
+    .muted{color:var(--muted);font-size:13px}
+
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:white;font-weight:600;cursor:pointer;transition:transform .12s,background .12s}
+    .btn:hover{transform:scale(1.03);background:var(--accent-600)}
+    .btn.secondary{background:transparent;color:var(--accent);border:1px solid rgba(79,70,229,0.12)}
+
+    /* Course detail panel (slide-in) */
+    .detail-panel{
+      position:fixed;right:24px;top:70px;width:min(620px,92%);max-height:80vh;overflow:auto;background:var(--card);padding:18px;border-radius:14px;box-shadow:0 20px 60px rgba(2,6,23,0.12);transform:translateY(20px);opacity:0;pointer-events:none;transition:all .22s ease-in-out;
+    }
+    .detail-panel.open{transform:translateY(0);opacity:1;pointer-events:auto}
+    .close-x{background:#f8fafc;padding:6px;border-radius:8px;border:0}
+
+    .progress-wrap{margin:12px 0}
+    .progress-bar{height:12px;background:#eef2ff;border-radius:999px;overflow:hidden}
+    .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-600));transition:width .4s ease}
+
+    .lessons{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+    .lesson{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;border:1px solid rgba(15,23,42,0.04);background:linear-gradient(180deg,rgba(255,255,255,0.5),transparent)}
+    .lesson.completed{opacity:.7}
+
+    .footer{position:fixed;left:0;right:0;bottom:0;padding:12px;background:transparent;display:flex;align-items:center;justify-content:center}
+    .minifoot{background:var(--glass);backdrop-filter:blur(6px);padding:10px 18px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,0.06)}
+
+    /* small UI extras */
+    .course-progress-small{font-size:13px;color:var(--muted);}
+    .pill{padding:6px 10px;border-radius:999px;border:1px solid rgba(0,0,0,0.06);font-weight:600}
+
+    /* responsive detail: bottom sheet on mobile */
+    @media (max-width:700px){
+      .detail-panel{left:0;right:0;bottom:0;top:auto;max-height:78vh;border-bottom-left-radius:0;border-bottom-right-radius:0}
+    }
+
+    /* tiny helper */
+    .hide{display:none}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="nav">
+      <div class="brand">
+        <div class="logo">ML</div>
+        <div>
+          <div style="font-weight:700">MiniLearn</div>
+          <div style="font-size:12px;color:var(--muted)">A clean mini e-learning prototype</div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:20px">
+        <nav>
+          <a href="#" id="nav-home">Home</a>
+          <a href="#" id="nav-courses">Courses</a>
+          <a href="#" id="nav-about">About</a>
+        </nav>
+
+        <div class="tools">
+          <div class="search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="opacity:.6"><path d="M11 19a8 8 0 1 1 5.293-14.293A8 8 0 0 1 11 19z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <input type="search" id="search" placeholder="Search courses..." aria-label="Search courses">
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section id="home">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div>
+            <h1 style="margin:0">Explore courses</h1>
+            <p class="muted" style="margin:6px 0 0">Pick a course and start learning — progress is saved locally.</p>
+          </div>
+          <div class="course-summary" style="display:flex;gap:10px;align-items:center">
+            <div class="pill" id="all-count">0 courses</div>
+          </div>
+        </div>
+
+        <div class="grid" id="course-grid">
+          <!-- course cards injected here -->
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <!-- Detail panel -->
+  <aside class="detail-panel" id="detail">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:13px;color:var(--muted)" id="detail-category">Category</div>
+        <h2 id="detail-title" style="margin:6px 0">Course title</h2>
+        <div class="muted" id="detail-desc">Course description...</div>
+      </div>
+      <div>
+        <button class="close-x" id="close-detail" title="Close">✕</button>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="muted">Progress</div>
+        <div class="muted" id="detail-percent">0%</div>
+      </div>
+      <div class="progress-bar" aria-hidden="true">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+      <div class="muted">Lessons</div>
+      <div class="course-progress-small" id="lessons-count">0 lessons</div>
+    </div>
+
+    <div class="lessons" id="lessons-list">
+      <!-- lessons injected here -->
+    </div>
+
+    <div style="margin-top:14px;display:flex;justify-content:space-between;gap:12px">
+      <button class="btn secondary" id="reset-course">Reset Progress</button>
+      <button class="btn" id="complete-course">Mark Course Completed</button>
+    </div>
+  </aside>
+
+  <div class="footer">
+    <div class="minifoot">Copyright © <span id="year"></span> MiniLearn • Prototype — No backend • Progress saved locally</div>
+  </div>
+
+  <script>
+    /* ========================================
+       Data model: courses array
+       Each course has id, title, description, category, lessons: [{id,title,desc}], thumbnail (emoji), and persisted progress state.
+       ======================================== */
+
+    const COURSES_KEY = 'minilearn_courses_v1';
+
+    // Default course data (you can add more courses here)
+    const defaultCourses = [
+      {
+        
+        id: 'c-js-01',
+        title: 'JavaScript Essentials',
+        category: 'Programming',
+        thumbnail: '🟨',
+        description: 'Learn the fundamentals of JavaScript — variables, functions, DOM and events.',
+        lessons: [
+          {id:'l1',title:'Intro to JavaScript',desc:'What is JS and where it runs.'},
+          {id:'l2',title:'Variables & Types',desc:'Numbers, strings, booleans.'},
+          {id:'l3',title:'Functions & Scope',desc:'Write reusable code.'},
+          {id:'l4',title:'DOM Manipulation',desc:'Interact with the page.'}
+        ]
+      },
+      {
+        id: 'c-ui-02',
+        title: 'UI Design Basics',
+        category: 'Design',
+        thumbnail: '🎨',
+        description: 'Design clean user interfaces using spacing, color, and typography principles.',
+        lessons: [
+          {id:'l1',title:'Principles of Design',desc:'Balance, contrast, hierarchy.'},
+          {id:'l2',title:'Color Theory',desc:'Use color effectively.'},
+          {id:'l3',title:'Typography',desc:'Picking fonts and scales.'}
+        ]
+      },
+
+
+     
+      {
+        id: 'c-py-03',
+        title: 'Python for Beginners',
+        category: 'Programming',
+        thumbnail: '🐍',
+        description: 'Start with Python fundamentals and simple scripting.',
+        lessons: [
+          {id:'l1',title:'Getting started',desc:'Install and run Python.'},
+          {id:'l2',title:'Data types & variables',desc:'Lists, dicts, tuples.'},
+          {id:'l3',title:'Control flow',desc:'if, for, while loops.'}
+        ]
+      }
+    ];
+
+    // --- Utilities: load/save to localStorage ---
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(COURSES_KEY);
+        if(!raw) return null;
+        return JSON.parse(raw);
+      }catch(e){console.warn('Failed to parse saved courses',e);return null}
+    }
+    function saveState(state){
+      localStorage.setItem(COURSES_KEY,JSON.stringify(state));
+    }
+
+    // Initialize app state: merge default courses with persisted progress
+    function initCourses(){
+      const saved = loadState();
+      if(!saved){
+        // attach progress fields to default
+        const init = defaultCourses.map(c=>({
+          ...c,
+          completed:false,
+          lessonState: c.lessons.map(l=>({id:l.id,completed:false}))
+        }));
+        saveState(init);
+        return init;
+      }
+      // If saved exists, ensure missing fields get defaults (for forward-compat)
+      return saved.map(c=>({
+        ...c,
+        completed: c.completed || false,
+        lessonState: c.lessonState || (c.lessons ? c.lessons.map(l=>({id:l.id,completed:false})) : [])
+      }));
+    }
+
+    let courses = initCourses();
+    let activeCourseId = null;
+
+    /* --------------------------
+       Rendering: course grid
+       -------------------------- */
+    const grid = document.getElementById('course-grid');
+    const allCount = document.getElementById('all-count');
+    const search = document.getElementById('search');
+
+    function calcCourseProgress(course){
+      const total = (course.lessonState || []).length || (course.lessons||[]).length;
+      if(total===0) return 0;
+      const done = (course.lessonState || []).filter(l=>l.completed).length;
+      return Math.round((done/total)*100);
+    }
+
+    function renderGrid(filterText=''){
+      grid.innerHTML='';
+      const show = courses.filter(c=>c.title.toLowerCase().includes(filterText.toLowerCase()));
+      allCount.textContent = `${show.length} course${show.length!==1?'s':''}`;
+
+      show.forEach(course=>{
+        const col = document.createElement('div');
+        col.className='card';
+
+        const thumb = document.createElement('div'); thumb.className='thumb'; thumb.textContent = `${course.thumbnail}  ${course.category}`;
+        const title = document.createElement('div'); title.className='title'; title.textContent = course.title;
+        const desc = document.createElement('div'); desc.className='muted'; desc.textContent = course.description;
+
+        const meta = document.createElement('div'); meta.className='meta';
+        const left = document.createElement('div'); left.appendChild(title); left.appendChild(desc);
+        const right = document.createElement('div');
+
+        const progress = document.createElement('div'); progress.className='course-progress-small'; progress.textContent = `${calcCourseProgress(course)}%`; progress.style.marginBottom='10px';
+
+        const viewBtn = document.createElement('button'); viewBtn.className='btn'; viewBtn.textContent='View Details';
+        viewBtn.onclick = ()=>openDetail(course.id);
+
+        const completeBtn = document.createElement('button'); completeBtn.className='btn secondary'; completeBtn.textContent = course.completed ? 'Completed' : 'Mark Completed';
+        completeBtn.onclick = (e)=>{
+          e.stopPropagation();
+          course.completed = !course.completed;
+          if(course.completed){
+            // mark all lessons complete
+            course.lessonState = (course.lessonState || course.lessons.map(l=>({id:l.id,completed:false}))).map(s=>({...s,completed:true}));
+          }else{
+            course.lessonState = (course.lessonState || course.lessons.map(l=>({id:l.id,completed:false}))).map(s=>({...s,completed:false}));
+          }
+          saveState(courses);
+          renderGrid(search.value);
+          if(activeCourseId===course.id) renderDetail(course.id);
+        }
+
+        right.appendChild(progress);
+        right.appendChild(viewBtn);
+        right.appendChild(document.createElement('br'));
+        right.appendChild(completeBtn);
+
+        meta.appendChild(left);
+        meta.appendChild(right);
+
+        col.appendChild(thumb);
+        col.appendChild(meta);
+        grid.appendChild(col);
+      });
+    }
+
+    /* --------------------------
+       Detail panel actions
+       -------------------------- */
+    const detail = document.getElementById('detail');
+    const closeDetail = document.getElementById('close-detail');
+    const detailTitle = document.getElementById('detail-title');
+    const detailDesc = document.getElementById('detail-desc');
+    const detailCategory = document.getElementById('detail-category');
+    const lessonsList = document.getElementById('lessons-list');
+    const progressFill = document.getElementById('progress-fill');
+    const detailPercent = document.getElementById('detail-percent');
+    const lessonsCount = document.getElementById('lessons-count');
+    const resetCourseBtn = document.getElementById('reset-course');
+    const completeCourseBtn = document.getElementById('complete-course');
+
+    function openDetail(courseId){
+      activeCourseId = courseId;
+      renderDetail(courseId);
+      detail.classList.add('open');
+      // scroll top for mobile UX
+      detail.scrollTop = 0;
+    }
+    function closeDetailPanel(){
+      detail.classList.remove('open');
+      activeCourseId = null;
+    }
+    closeDetail.addEventListener('click',closeDetailPanel);
+
+    function renderDetail(courseId){
+      const course = courses.find(c=>c.id===courseId);
+      if(!course) return;
+      detailTitle.textContent = course.title;
+      detailDesc.textContent = course.description;
+      detailCategory.textContent = course.category;
+
+      // ensure lessonState exists
+      if(!course.lessonState){
+        course.lessonState = course.lessons.map(l=>({id:l.id,completed:false}));
+      }
+
+      // render lessons
+      lessonsList.innerHTML = '';
+      course.lessons.forEach((lesson, idx)=>{
+        const state = course.lessonState.find(s=>s.id===lesson.id) || {completed:false};
+        const el = document.createElement('div'); el.className='lesson'+(state.completed ? ' completed':'');
+        const left = document.createElement('div');
+        left.innerHTML = `<div style="font-weight:600">${idx+1}. ${lesson.title}</div><div class='muted' style='margin-top:6px'>${lesson.desc}</div>`;
+        const right = document.createElement('div');
+
+        const markBtn = document.createElement('button'); markBtn.className='btn secondary';
+        markBtn.textContent = state.completed ? 'Completed' : 'Mark Completed';
+        markBtn.onclick = ()=>{
+          state.completed = !state.completed;
+          // update course.lessonState
+          const sIdx = course.lessonState.findIndex(s=>s.id===lesson.id);
+          if(sIdx>-1) course.lessonState[sIdx].completed = state.completed;
+          else course.lessonState.push({id:lesson.id,completed:state.completed});
+
+          // if all lessons completed -> mark course completed
+          const allDone = course.lessonState.every(s=>s.completed);
+          course.completed = allDone;
+
+          saveState(courses);
+          renderDetail(courseId);
+          renderGrid(search.value);
+        }
+
+        right.appendChild(markBtn);
+        el.appendChild(left);
+        el.appendChild(right);
+        lessonsList.appendChild(el);
+      });
+
+      const percent = calcCourseProgress(course);
+      detailPercent.textContent = percent + '%';
+      progressFill.style.width = percent + '%';
+      lessonsCount.textContent = `${course.lessons.length} lesson${course.lessons.length!==1?'s':''}`;
+
+      // reset and complete handlers
+      resetCourseBtn.onclick = ()=>{
+        course.lessonState = course.lessons.map(l=>({id:l.id,completed:false}));
+        course.completed = false;
+        saveState(courses);
+        renderDetail(courseId);
+        renderGrid(search.value);
+      }
+      completeCourseBtn.onclick = ()=>{
+        course.lessonState = course.lessons.map(l=>({id:l.id,completed:true}));
+        course.completed = true;
+        saveState(courses);
+        renderDetail(courseId);
+        renderGrid(search.value);
+      }
+    }
+
+    // Click outside to close detail
+    document.addEventListener('click',e=>{
+      if(!detail.classList.contains('open')) return;
+      const within = detail.contains(e.target) || e.target.closest('.card') || e.target.closest('.btn');
+      if(!within) closeDetailPanel();
+    });
+
+    // Nav buttons
+    document.getElementById('nav-home').addEventListener('click',e=>{e.preventDefault();window.scrollTo({top:0,behavior:'smooth'})});
+    document.getElementById('nav-about').addEventListener('click',e=>{e.preventDefault();alert('MiniLearn prototype\nBuilt with HTML/CSS/JS — no backend.');});
+
+    // search
+    search.addEventListener('input', ()=> renderGrid(search.value));
+
+    // init render
+    renderGrid();
+
+    // small details
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Expose for debugging in console (optional)
+    window.MINILEARN = {courses, saveState, loadState, renderGrid, openDetail};
+
+  </script>
+</body>
+</html>
