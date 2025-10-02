@@ -34,6 +34,7 @@ Deployed on **Vercel** for easy access and sharing. 🚀
 
 ## 📂 Project Structure
 ├── index.html # Main entry point (includes HTML, CSS, JS)
+
 ├── README.md # Project documentation
 
 > ⚡ All logic (HTML + CSS + JS) is contained inside `index.html` for simplicity.  
